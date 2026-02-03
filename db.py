@@ -2,6 +2,7 @@ import sqlite3
 from pathlib import Path
 from config import DB_PATH
 
+
 def init_db():
     Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
@@ -31,3 +32,31 @@ def get_last_offers(limit=10):
     rows = cur.fetchall()
     conn.close()
     return rows
+
+
+def save_offers(offers):
+    """
+    Сохраняет список предложений в БД.
+    Ожидает список словарей с ключами title, link, source.
+    """
+    if not offers:
+        return
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    try:
+        for offer in offers:
+            cur.execute(
+                """
+                INSERT OR IGNORE INTO offers (title, link, source)
+                VALUES (?, ?, ?)
+                """,
+                (
+                    offer["title"],
+                    offer["link"],
+                    offer.get("source", "ANEX"),
+                ),
+            )
+        conn.commit()
+    finally:
+        conn.close()
